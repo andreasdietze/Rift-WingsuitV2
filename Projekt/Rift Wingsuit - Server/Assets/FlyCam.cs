@@ -5,12 +5,12 @@ using System.Linq;
 public class FlyCam : MonoBehaviour
 {
 
-
     // smoothing
     public bool smooth = true;
     public float acceleration = 0.2f;
     protected float actSpeed = 0.0f;	// keep it from 0 to 1
-    public float speed = 50.0f;			// max speed of camera
+	private float currentSpeed = 0.0f;
+	public float cameraAcceleration = 1.5f;
     public bool inverted = false;
 	private Vector3 lastMouse = new Vector3(255, 255, 255);
 	public float sensitivity = 0.25f;	// keep it from 0..1
@@ -66,6 +66,7 @@ public class FlyCam : MonoBehaviour
 
 		// Compute direction by active controller
 		lastViewport = controller.CalculateViewport (inverted);
+		//Directory of the "force to apply"
 		dir = controller.GetDir ();
 
 		// -------------------------------- Verschiedene Ansätze der Flugphysik --------------------------------
@@ -76,10 +77,6 @@ public class FlyCam : MonoBehaviour
 		// http://de.wikihow.com/Die-maximale-Fallgeschwindigkeit-berechnen
 		// Maximale Fallgeschwindigkeit in X-Position ~ 198 km/h
 		// Maximale Fallgeschwindigkeit kopfüber ~ 500 km/h
-		float s = Mathf.Pow (Time.time, 2); // s²
-		float g = 9.81f / s; // 9.81m/s²
-		float h = (g * s) / 2; // Fallstrecke = (g * t²) / 2
-		float v = (g * Time.time); // Mathf.Sqrt (s) Fallgeschwindigkeit
 
 		slrc = (StartLevelRayCaster)GameObject.FindGameObjectWithTag ("MainCamera").GetComponent ("StartLevelRayCaster");
 		if (slrc.startGame) {
@@ -88,12 +85,11 @@ public class FlyCam : MonoBehaviour
 
 		//Debug.Log (v);
 		fallVelocity = playerRidgid.velocity;
-		
-		//fallVelocity.y -= 9.81f * Time.deltaTime; // h * Time.deltaTime;
-		//Debug.Log (fallVelocity);
+
 		// Set maximal fall speed in x-position
 		// TODO: - get playerorientation x-axis (test first with cam)
 		// 		 - set the max fall speed in dependence of the angle between x0 and x90
+		 
 		
 		// http://wingsuit.de/wingsuit-lernen/fur-fallschirmspringer/aerodynamische-grundlagen/
 		// The easy way:
@@ -113,12 +109,13 @@ public class FlyCam : MonoBehaviour
 
 
 		// Fallgeschwindigkeit während des Flugs
-		float ms = fallVelocity.y;  // meter per second
-		if (Mathf.Abs(MStoKMH (ms)) > 50.0f) { // && x-position -> playerorientationX
+		if (Mathf.Abs(MStoKMH (fallVelocity.y)) > 50.0f) { // && x-position -> playerorientationX
 			fallVelocity.y = -50.0f  / 3.6f;
-			ms = -50.0f / 3.6f;
 			startFly = true;
 		}
+
+		currentSpeed = FlyPhysics.getVelocityInKMH (Time.time) * cameraAcceleration;
+
 
 		//Debug.Log ("Fall time" + (int)Time.time);
 		//Debug.Log ("Fall speed ms/s: " +  Mathf.Abs(ms));  //Mathf.Abs(playerRidgid.velocity.y)); 
@@ -153,9 +150,9 @@ public class FlyCam : MonoBehaviour
 		
         if (smooth)
             //transform.Translate(lastDir * actSpeed * speed * Time.deltaTime);
-			transform.Translate((lastDir + addToZ) * speed * actSpeed * Time.deltaTime);
+			transform.Translate((lastDir + addToZ) * currentSpeed * actSpeed * Time.deltaTime);
         else
-            transform.Translate(dir * speed * Time.deltaTime); 
+			transform.Translate(dir * currentSpeed * Time.deltaTime); 
 		
     }
 	
@@ -189,7 +186,7 @@ public class FlyCam : MonoBehaviour
 	// Einfache, derzeit verwendete Flugphysik
 	Vector3 UpdateSpeedSimple(){
 		float alpha = transform.rotation.eulerAngles.x;
-		if(alpha >= 90.0f)
+		if (alpha >= 90.0f)
 			alpha = 0.0f;
 
 		float att = alpha / 90.0f;
@@ -232,7 +229,7 @@ public class FlyCam : MonoBehaviour
     {
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
-		Vector3 finSpeed = (lastDir + addToZ) * speed * actSpeed * Time.deltaTime;
-		GUI.Label(new Rect(10, 250, 150, 150), "Speed : " + finSpeed.z, font);
+		Vector3 finSpeed = (lastDir + addToZ) * currentSpeed * actSpeed * Time.deltaTime;
+		GUI.Label(new Rect(10, 250, 150, 150), "Speed : " + finSpeed.z + ", Spd: " + FlyPhysics.getVelocityInKMH(Time.time), font);
     }
 }
