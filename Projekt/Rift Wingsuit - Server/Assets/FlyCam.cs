@@ -29,6 +29,7 @@ public class FlyCam : MonoBehaviour
 	public Rigidbody playerRidgid;
 
 	// Fly physics
+	float startTime = -1.0f;
 	Vector3 fallVelocity = new Vector3();
 	public bool startFly = false;
 	Vector3 addToZ = Vector3.zero;
@@ -59,6 +60,10 @@ public class FlyCam : MonoBehaviour
         startingRot = playerRidgid.rotation;
     }
 
+	float getTime() {
+		return (startTime == -1.0f ? 0.0f : Time.time - startTime);
+	}
+
     void Update()
     {
 		// Setup direction vector
@@ -79,12 +84,21 @@ public class FlyCam : MonoBehaviour
 		// Maximale Fallgeschwindigkeit kopfüber ~ 500 km/h
 
 		slrc = (StartLevelRayCaster)GameObject.FindGameObjectWithTag ("MainCamera").GetComponent ("StartLevelRayCaster");
+		fallVelocity = playerRidgid.velocity;
 		if (slrc.startGame) {
+			if(!playerRidgid.useGravity) {
+				startTime = Time.time;
+			}
 			playerRidgid.useGravity = true;
 		}
 
+		if (playerRidgid.useGravity) {
+			FlyPhysics.adjustCrossSectionArea (playerRidgid.rotation);
+			currentSpeed = FlyPhysics.getVelocityInKMH (getTime());
+			fallVelocity.y = FlyPhysics.getFallHeight (playerRidgid.rotation, getTime()) * (-1);
+		}
+
 		//Debug.Log (v);
-		fallVelocity = playerRidgid.velocity;
 
 		// Set maximal fall speed in x-position
 		// TODO: - get playerorientation x-axis (test first with cam)
@@ -107,15 +121,8 @@ public class FlyCam : MonoBehaviour
 		// -> A abhängig von Winkel des Spielers zwischen forward und down.
 		// -------------------------------- Verschiedene Ansätze der Flugphysik --------------------------------
 
-
-		// Fallgeschwindigkeit während des Flugs
-		if (Mathf.Abs(MStoKMH (fallVelocity.y)) > 50.0f) { // && x-position -> playerorientationX
-			fallVelocity.y = -50.0f  / 3.6f;
-			startFly = true;
-		}
-
-		currentSpeed = FlyPhysics.getVelocityInKMH (Time.time) * cameraAcceleration;
-
+		//playerRidgid.
+		//FlyPhysics.adjustCrossSectionArea (0.0f);
 
 		//Debug.Log ("Fall time" + (int)Time.time);
 		//Debug.Log ("Fall speed ms/s: " +  Mathf.Abs(ms));  //Mathf.Abs(playerRidgid.velocity.y)); 
@@ -230,6 +237,7 @@ public class FlyCam : MonoBehaviour
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
 		Vector3 finSpeed = (lastDir + addToZ) * currentSpeed * actSpeed * Time.deltaTime;
-		GUI.Label(new Rect(10, 250, 150, 150), "Speed : " + finSpeed.z + ", Spd: " + FlyPhysics.getVelocityInKMH(Time.time), font);
+		float angleToFloor = FlyPhysics.getAngleToFloor (playerRidgid.rotation);
+		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.getVelocityInKMH(getTime()), font);
     }
 }

@@ -60,10 +60,10 @@ public class FlyPhysics : MonoBehaviour {
 		return Mathf.Sqrt(2 * MASS_OF_DIVER_IN_KG * GRAVITY / (AIR_DENSITY * CROSS_SECTION_AREA * DRAG_COEFFICIENT));
 	}
 	
-	public static float getFallHeight(Quaternion q) {
+	public static float getFallHeight(Quaternion q, float timePassed) {
 		float currentAngle = getAngleToFloor (q);
 		//With this formula, you always drop with at least 50% of the free-fall height
-		float result = ((GRAVITY * Time.deltaTime) / 2) * ((currentAngle+90.0f) / 180.0f);
+		float result = ((GRAVITY * timePassed) / 2) * ((currentAngle+60.0f) / 360.0f);
 		return result;
 	}
 }
