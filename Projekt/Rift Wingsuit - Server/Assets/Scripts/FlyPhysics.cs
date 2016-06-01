@@ -11,9 +11,29 @@ public class FlyPhysics : MonoBehaviour {
 	private static float DRAG_COEFFICIENT = 0.6f;
 	
 	//(Wortwörtliche) Durchschnittsfläche des Torso
-	public static float CROSS_SECTION_AREA = 0.4f; //m²
+    public static float CROSS_SECTION_AREA = 0.2f; //m²
+    private static float CROSS_SECTION_AREA_MINIMUM = 0.2f;
+    private static float CROSS_SECTION_AREA_MAXIMUM = 1.0f;
+
 	public static float MASS_OF_DIVER_IN_KG = 75;
 	public static float AIR_DENSITY = 1.225f; //1.0 (higher areas) ~ 1.5 (lower, e.g. sea)
+
+	public static float getAngleToFloor(Quaternion q) {
+		Vector3 asVector = q.ToEulerAngles ();
+		return (asVector.x * 180.0f / Mathf.PI);
+	}
+
+	public static void adjustCrossSectionArea(Quaternion q) {
+		float angle = getAngleToFloor (q);
+		if (angle <= 0.0f) {
+			CROSS_SECTION_AREA = CROSS_SECTION_AREA_MAXIMUM;
+		} else if(angle >= 90.0f) {
+			CROSS_SECTION_AREA = CROSS_SECTION_AREA_MINIMUM;
+		} else {
+			CROSS_SECTION_AREA = (CROSS_SECTION_AREA_MAXIMUM - CROSS_SECTION_AREA_MINIMUM) * ((90.0f-angle) / 90.0f) + 
+				CROSS_SECTION_AREA_MINIMUM;
+		}
+	}
 
 	private static float msToKMH(float value) {
 		return value * 3.6f;
@@ -40,8 +60,11 @@ public class FlyPhysics : MonoBehaviour {
 		return Mathf.Sqrt(2 * MASS_OF_DIVER_IN_KG * GRAVITY / (AIR_DENSITY * CROSS_SECTION_AREA * DRAG_COEFFICIENT));
 	}
 	
-	public static float getFallHeight(float timePassed) {
-		return (GRAVITY * timePassed) / 2;
+	public static float getFallHeight(Quaternion q) {
+		float currentAngle = getAngleToFloor (q);
+		//With this formula, you always drop with at least 50% of the free-fall height
+		float result = ((GRAVITY * Time.deltaTime) / 2) * ((currentAngle+90.0f) / 180.0f);
+		return result;
 	}
 }
 
