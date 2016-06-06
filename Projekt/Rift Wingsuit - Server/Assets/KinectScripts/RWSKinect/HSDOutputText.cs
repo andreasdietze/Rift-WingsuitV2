@@ -20,7 +20,7 @@ public class HSDOutputText : MonoBehaviour {
 	// Delta height between shoulder and hand
 	private float deltaY;
 	[Tooltip("Delta y multiplier for up/down arm movement")]
-	private float dm = 1.25f;
+	public float dm = 1.25f;
 	
 	// Delta depth between shoulder and hand
 	private float deltaZ;
@@ -57,9 +57,12 @@ public class HSDOutputText : MonoBehaviour {
 		// Get delta z
 		deltaZ = rightShoulder.position.z - 
 		         rightHand.position.z;
-		
+
+		// Extend up/down arme range
+		if (deltaY > 1E-02f || deltaY < (-1E-02f)) deltaY *= dm;
 		// Extend rear arme range
 		if (deltaZ >   1E-02f)  deltaZ *= pdm;
+		// Extend front arme range
 		if (deltaZ < (-1E-02f)) deltaZ *= ndm;
 		
 		// Sync maxY

@@ -5,7 +5,7 @@ public class KinectController : Controller
 {
     // Access to kincect input transformation script
     public HSDOutputText kinectOutput;
-	private float kinectSensitivity = 2.75f;
+	public float kinectSensitivity = 4.00f;
 
 	// Kinect output
     private float kinectYaw;
