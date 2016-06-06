@@ -97,11 +97,11 @@ public class KinectController : Controller
     {
         // Kinect user input
         if (enableYaw)
-			kinectYaw = kinectOutput.ReturnDeltaY () * kinectSensitivity;
+			kinectYaw = kinectOutput.GetDeltaY () * kinectSensitivity;
         else
             kinectYaw = 0.0f;
         if (enablePitch)
-			kinectPitch = kinectOutput.ReturnDeltaZ() * kinectSensitivity;
+			kinectPitch = kinectOutput.GetDeltaZ() * kinectSensitivity;
         else
             kinectPitch = 0.0f;
 		//print ("KinectOutput: " + kinectOutput.ToString ());
