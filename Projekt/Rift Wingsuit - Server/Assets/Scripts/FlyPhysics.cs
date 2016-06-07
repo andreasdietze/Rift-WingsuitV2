@@ -15,12 +15,41 @@ public class FlyPhysics : MonoBehaviour {
     private static float CROSS_SECTION_AREA_MINIMUM = 0.2f;
     private static float CROSS_SECTION_AREA_MAXIMUM = 1.0f;
 
+	public static float BEST_GLIDE_ANGLE_RATIO = 0.75f;
+	public static float BEST_GLIDE_ANGLE = 25.0f;
+
 	public static float MASS_OF_DIVER_IN_KG = 75;
 	public static float AIR_DENSITY = 1.225f; //1.0 (higher areas) ~ 1.5 (lower, e.g. sea)
 
 	public static float getAngleToFloor(Quaternion q) {
 		Vector3 asVector = q.ToEulerAngles ();
-		return (asVector.x * 180.0f / Mathf.PI);
+		float angle = (asVector.x * 180.0f / Mathf.PI);
+		if (angle < 0.0f) {
+			angle += 360.0f;
+		}
+		return angle;
+	}
+
+	public static Vector3 calculateFallVector(Quaternion q) {
+		float angle = FlyPhysics.getAngleToFloor (q);
+		float velocityMS = FlyPhysics.getVelocity (Time.time);
+
+		float ratio = 0.0f;
+		if (angle < BEST_GLIDE_ANGLE) {
+			angle += BEST_GLIDE_ANGLE - angle;
+		}
+		//Remaining X degrees between 'best glide' and free fall
+		//multiplied
+		float angleDiff = 90.0f - angle;
+
+		//BEST CASE GLIDE (30°): 60° / 90 - 30 = 60° / 60° = 1
+		//WORST CASE = 0 / X = 0
+		//AVERAGE (45°): 45 / 90 - 30° = 45 / 60 = 0.75 * BEST_GLIDE
+		//WORSE (65°): (90-65°) = 25 / 90 - 30 = 25 / 60 = 0.41 * BEST_GLIDE
+		ratio = angleDiff / (90.0f - BEST_GLIDE_ANGLE) * BEST_GLIDE_ANGLE_RATIO;
+	
+		Vector3 output = new Vector3 (0.0f, -(velocityMS * (1-ratio)), velocityMS * ratio);
+		return output;
 	}
 
 	public static void adjustCrossSectionArea(Quaternion q) {
@@ -63,7 +92,7 @@ public class FlyPhysics : MonoBehaviour {
 	public static float getFallHeight(Quaternion q, float timePassed) {
 		float currentAngle = getAngleToFloor (q);
 		//With this formula, you always drop with at least 50% of the free-fall height
-		float result = ((GRAVITY * timePassed) / 2) * ((currentAngle+60.0f) / 360.0f);
+		float result = ((GRAVITY * timePassed) / 2);
 		return result;
 	}
 }
