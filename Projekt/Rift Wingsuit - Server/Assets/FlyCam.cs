@@ -94,8 +94,7 @@ public class FlyCam : MonoBehaviour
 
 		if (playerRidgid.useGravity) {
 			FlyPhysics.adjustCrossSectionArea (playerRidgid.rotation);
-			currentSpeed = FlyPhysics.getVelocityInKMH (getTime());
-			fallVelocity.y = FlyPhysics.getFallHeight (playerRidgid.rotation, getTime()) * (-1);
+			fallVelocity = FlyPhysics.calculateFallVector(playerRidgid.rotation);
 		}
 
 		//Debug.Log (v);
@@ -131,6 +130,8 @@ public class FlyCam : MonoBehaviour
 		// Set computed fall velocity 
 		playerRidgid.velocity = fallVelocity;
 
+		transform.Translate (fallVelocity);
+		/*
         // Movement of the camera
         if (dir != Vector3.zero)
         {
@@ -160,7 +161,7 @@ public class FlyCam : MonoBehaviour
 			transform.Translate((lastDir + addToZ) * currentSpeed * actSpeed * Time.deltaTime);
         else
 			transform.Translate(dir * currentSpeed * Time.deltaTime); 
-		
+		*/
     }
 	
 	// 1 m/s = 3,6 km/h   -> fall speed m/s * 3.6f
@@ -236,8 +237,7 @@ public class FlyCam : MonoBehaviour
     {
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
-		Vector3 finSpeed = (lastDir + addToZ) * currentSpeed * actSpeed * Time.deltaTime;
 		float angleToFloor = FlyPhysics.getAngleToFloor (playerRidgid.rotation);
-		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.getVelocityInKMH(getTime()), font);
+		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.calculateFallVector(playerRidgid.rotation), font);
     }
 }
