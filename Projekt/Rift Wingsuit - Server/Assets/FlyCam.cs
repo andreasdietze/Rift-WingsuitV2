@@ -10,6 +10,7 @@ public class FlyCam : MonoBehaviour
     public float acceleration = 0.2f;
     protected float actSpeed = 0.0f;	// keep it from 0 to 1
 	private float currentSpeed = 0.0f;
+	private float lastAngle = -1.0f;
 	public float cameraAcceleration = 1.5f;
     public bool inverted = false;
 	private Vector3 lastMouse = new Vector3(255, 255, 255);
@@ -74,6 +75,16 @@ public class FlyCam : MonoBehaviour
 		//Directory of the "force to apply"
 		dir = controller.GetDir ();
 
+		float currentAngle = FlyPhysics.getAngleToFloor(playerRidgid.rotation);
+		if (lastAngle < 0.0f) {
+			lastAngle = currentAngle;
+		}
+		float diff = Mathf.Abs (currentAngle - lastAngle);
+		if (diff >= 90.0f) {
+			currentAngle = lastAngle;
+		}
+		lastAngle = currentAngle;
+
 		// -------------------------------- Verschiedene Ansätze der Flugphysik --------------------------------
 
 		// Compute free fall velocity
@@ -93,8 +104,8 @@ public class FlyCam : MonoBehaviour
 		}
 
 		if (playerRidgid.useGravity) {
-			FlyPhysics.adjustCrossSectionArea (playerRidgid.rotation);
-			fallVelocity = FlyPhysics.calculateFallVector(playerRidgid.rotation);
+			FlyPhysics.adjustCrossSectionArea (lastAngle);
+			fallVelocity = FlyPhysics.calculateFallVector(lastAngle);
 		}
 
 		//Debug.Log (v);
@@ -238,6 +249,6 @@ public class FlyCam : MonoBehaviour
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
 		float angleToFloor = FlyPhysics.getAngleToFloor (playerRidgid.rotation);
-		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.calculateFallVector(playerRidgid.rotation), font);
+		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.calculateFallVector(angleToFloor), font);
     }
 }

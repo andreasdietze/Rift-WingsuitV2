@@ -9,17 +9,19 @@ public class FlyPhysics : MonoBehaviour {
 	//Taken from: http://onlinelibrary.wiley.com/doi/10.1256/wea.29.02/pdf
 	//The force that works against gravity (Traegheit)
 	private static float DRAG_COEFFICIENT = 0.6f;
-	
+
+	public static Vector3 RATIO_APPLICATION_VECTOR = new Vector3 (0.0f, 0.4f, 0.8f);
+
 	//(Wortwörtliche) Durchschnittsfläche des Torso
-    public static float CROSS_SECTION_AREA = 0.2f; //m²
-    private static float CROSS_SECTION_AREA_MINIMUM = 0.2f;
-    private static float CROSS_SECTION_AREA_MAXIMUM = 1.0f;
+    private static float CROSS_SECTION_AREA_MINIMUM = 0.25f;
+	private static float CROSS_SECTION_AREA_MAXIMUM = 1.0f;
+	private static float CROSS_SECTION_AREA = CROSS_SECTION_AREA_MINIMUM; //m²
 
 	public static float BEST_GLIDE_ANGLE_RATIO = 0.75f;
-	public static float BEST_GLIDE_ANGLE = 25.0f;
+	public static float BEST_GLIDE_ANGLE = 22.0f;
 
 	public static float MASS_OF_DIVER_IN_KG = 75;
-	public static float AIR_DENSITY = 1.225f; //1.0 (higher areas) ~ 1.5 (lower, e.g. sea)
+	private static float AIR_DENSITY = 1.225f; //1.0 (higher areas) ~ 1.5 (lower, e.g. sea)
 
 	public static float getAngleToFloor(Quaternion q) {
 		Vector3 asVector = q.ToEulerAngles ();
@@ -30,30 +32,37 @@ public class FlyPhysics : MonoBehaviour {
 		return angle;
 	}
 
-	public static Vector3 calculateFallVector(Quaternion q) {
-		float angle = FlyPhysics.getAngleToFloor (q);
+	public static Vector3 calculateFallVector(float angle) {
 		float velocityMS = FlyPhysics.getVelocity (Time.time);
 
-		float ratio = 0.0f;
-		if (angle < BEST_GLIDE_ANGLE) {
-			angle += BEST_GLIDE_ANGLE - angle;
-		}
-		//Remaining X degrees between 'best glide' and free fall
-		//multiplied
 		float angleDiff = 90.0f - angle;
-
-		//BEST CASE GLIDE (30°): 60° / 90 - 30 = 60° / 60° = 1
-		//WORST CASE = 0 / X = 0
-		//AVERAGE (45°): 45 / 90 - 30° = 45 / 60 = 0.75 * BEST_GLIDE
-		//WORSE (65°): (90-65°) = 25 / 90 - 30 = 25 / 60 = 0.41 * BEST_GLIDE
-		ratio = angleDiff / (90.0f - BEST_GLIDE_ANGLE) * BEST_GLIDE_ANGLE_RATIO;
+		//The ratio consists of 3 parts:
+		//- The "left-rotation" (90-ANGLE) of the axis system -> easier calculation
+		//- The ratio between said angle and the optimal gliding angle (also converted)
+		//- The fall-to-fly-ratio (i.e. who many meters do we 'fly' in comparison to 1m of height drop))
+		float glidingRatio = angleDiff / (90.0f - BEST_GLIDE_ANGLE) * BEST_GLIDE_ANGLE_RATIO;
+		
+		//In case the angle is not optimal, consider it as "breaking"
+		//This is done because the point beyond the optimal angle must not 
+		//lead to an acceleration (higher angles = faster)
+		//nor better gliding (because we passed beyond said point)
+		if (angle < BEST_GLIDE_ANGLE) {
+			//Losing Speed = Ratio between the current angle and the best one
+			//The total speed may be up to halved (if angle == 0)
+			float losingSpeed = ((BEST_GLIDE_ANGLE - angle) / BEST_GLIDE_ANGLE) * 0.2f * velocityMS;
+			//printf("Losing speed due to angle < BEST_GLIDING => BREAKING: %.3f\n", losingSpeed);
+			velocityMS -= losingSpeed;
+			
+			//Seen as the body offers more resistence beyond the best gliding angle
+			//the gliding-ratio needs to be adjusted (i.e. clamped))
+			glidingRatio -= (glidingRatio - BEST_GLIDE_ANGLE_RATIO)*1.1f;
+		}
 	
-		Vector3 output = new Vector3 (0.0f, -(velocityMS * (1-ratio)), velocityMS * ratio);
-		return output;
+		Vector3 output = new Vector3 (0.0f, -(velocityMS * (1.0f-glidingRatio)), velocityMS * glidingRatio);
+		return new Vector3(0.0f, output.y * RATIO_APPLICATION_VECTOR.y, output.z * RATIO_APPLICATION_VECTOR.z);
 	}
 
-	public static void adjustCrossSectionArea(Quaternion q) {
-		float angle = getAngleToFloor (q);
+	public static void adjustCrossSectionArea(float angle) {
 		if (angle <= 0.0f) {
 			CROSS_SECTION_AREA = CROSS_SECTION_AREA_MAXIMUM;
 		} else if(angle >= 90.0f) {
