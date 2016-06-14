@@ -24,18 +24,22 @@ public class FlyPhysics : MonoBehaviour {
 	private static float AIR_DENSITY = 1.225f; //1.0 (higher areas) ~ 1.5 (lower, e.g. sea)
 
 	public static float getAngleToFloor(Quaternion q) {
-		Vector3 asVector = q.ToEulerAngles ();
-		float angle = (asVector.x * 180.0f / Mathf.PI);
+		float angle = q.ToEulerAngles().x * 180.0f / Mathf.PI;
 		if (angle < 0.0f) {
 			angle += 360.0f;
 		}
 		return angle;
 	}
 
-	public static Vector3 calculateFallVector(float angle) {
-		float velocityMS = FlyPhysics.getVelocity (Time.time);
+	public static float getRotation(Quaternion q) {
+		float rotation = q.ToEulerAngles ().z * 180.0f / Mathf.PI;
+		return rotation;
+	}
 
-		float angleDiff = 90.0f - angle;
+	private static Vector3 calculatePitchVector(float pitch) {
+		float velocityMS = FlyPhysics.getVelocity (Time.time);
+		
+		float angleDiff = 90.0f - pitch;
 		//The ratio consists of 3 parts:
 		//- The "left-rotation" (90-ANGLE) of the axis system -> easier calculation
 		//- The ratio between said angle and the optimal gliding angle (also converted)
@@ -46,10 +50,10 @@ public class FlyPhysics : MonoBehaviour {
 		//This is done because the point beyond the optimal angle must not 
 		//lead to an acceleration (higher angles = faster)
 		//nor better gliding (because we passed beyond said point)
-		if (angle < BEST_GLIDE_ANGLE) {
+		if (pitch < BEST_GLIDE_ANGLE) {
 			//Losing Speed = Ratio between the current angle and the best one
 			//The total speed may be up to halved (if angle == 0)
-			float losingSpeed = ((BEST_GLIDE_ANGLE - angle) / BEST_GLIDE_ANGLE) * 0.2f * velocityMS;
+			float losingSpeed = ((BEST_GLIDE_ANGLE - pitch) / BEST_GLIDE_ANGLE) * 0.2f * velocityMS;
 			//printf("Losing speed due to angle < BEST_GLIDING => BREAKING: %.3f\n", losingSpeed);
 			velocityMS -= losingSpeed;
 			
@@ -57,9 +61,20 @@ public class FlyPhysics : MonoBehaviour {
 			//the gliding-ratio needs to be adjusted (i.e. clamped))
 			glidingRatio -= (glidingRatio - BEST_GLIDE_ANGLE_RATIO)*1.1f;
 		}
-	
+		
 		Vector3 output = new Vector3 (0.0f, -(velocityMS * (1.0f-glidingRatio)), velocityMS * glidingRatio);
 		return new Vector3(0.0f, output.y * RATIO_APPLICATION_VECTOR.y, output.z * RATIO_APPLICATION_VECTOR.z);
+	}
+
+	private static Vector3 calculateRotationVector(float rotation) {
+		return new Vector3 (rotation / 90.0f * 1.8f, 0.0f, 0.0f);
+	}
+
+
+	public static Vector3 calculateFallVector(float pitch, float rotation) {
+		Vector3 pitchVector = calculatePitchVector (pitch);
+		Vector3 rotationVector = calculateRotationVector (rotation);
+		return new Vector3 (rotationVector.x, pitchVector.y, pitchVector.z);
 	}
 
 	public static void adjustCrossSectionArea(float angle) {

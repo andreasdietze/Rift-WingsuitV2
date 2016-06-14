@@ -83,6 +83,7 @@ public class FlyCam : MonoBehaviour
 		if (diff >= 90.0f) {
 			currentAngle = lastAngle;
 		}
+		float currentRotation = FlyPhysics.getRotation (playerRidgid.rotation);
 		lastAngle = currentAngle;
 
 		// -------------------------------- Verschiedene Ansätze der Flugphysik --------------------------------
@@ -105,7 +106,7 @@ public class FlyCam : MonoBehaviour
 
 		if (playerRidgid.useGravity) {
 			FlyPhysics.adjustCrossSectionArea (lastAngle);
-			fallVelocity = FlyPhysics.calculateFallVector(lastAngle);
+			fallVelocity = FlyPhysics.calculateFallVector(lastAngle, currentRotation);
 		}
 
 		//Debug.Log (v);
@@ -139,9 +140,12 @@ public class FlyCam : MonoBehaviour
 		//Debug.Log ("Fall speed km/h: " +  Mathf.Abs(MStoKMH (ms))); //Mathf.Abs(playerRidgid.velocity.y * 3.6f));
 	
 		// Set computed fall velocity 
-		playerRidgid.velocity = fallVelocity;
+		Vector3 fallingOnly = new Vector3 (0.0f, fallVelocity.y, 0.0f);
+		fallVelocity.y = 0.0f;
 
-		transform.Translate (fallVelocity);
+		playerRidgid.velocity = fallVelocity;
+		transform.Translate (playerRidgid.velocity);
+		transform.Translate (transform.InverseTransformVector (fallingOnly));
 		/*
         // Movement of the camera
         if (dir != Vector3.zero)
@@ -249,6 +253,7 @@ public class FlyCam : MonoBehaviour
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
 		float angleToFloor = FlyPhysics.getAngleToFloor (playerRidgid.rotation);
-		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Spd: " + FlyPhysics.calculateFallVector(angleToFloor), font);
+		float rotation = FlyPhysics.getRotation (playerRidgid.rotation);
+		GUI.Label(new Rect(10, 250, 150, 150), "Angle: " + angleToFloor + ", Rot: " + rotation + ", Spd: " + FlyPhysics.calculateFallVector(angleToFloor, rotation), font);
     }
 }
