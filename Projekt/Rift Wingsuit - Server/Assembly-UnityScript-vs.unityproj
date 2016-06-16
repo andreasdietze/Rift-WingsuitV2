@@ -184,16 +184,16 @@
  <HintPath>D:/Unity502f1/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
  <Reference Include="ICSharpCode.SharpZipLib">
- <HintPath>C:/Users/Bambi/Desktop/Git/World2/Rift Wingsuit - Server/Assets/KinectScripts/SharpZipLib/ICSharpCode.SharpZipLib.dll</HintPath>
+ <HintPath>C:/Users/Bambi/Desktop/Git/Rift-WingsuitV2/Projekt/Rift Wingsuit - Server/Assets/KinectScripts/SharpZipLib/ICSharpCode.SharpZipLib.dll</HintPath>
  </Reference>
  <Reference Include="XInputDotNetPure">
- <HintPath>C:/Users/Bambi/Desktop/Git/World2/Rift Wingsuit - Server/Assets/Plugins/x86_64/XInputDotNetPure.dll</HintPath>
+ <HintPath>C:/Users/Bambi/Desktop/Git/Rift-WingsuitV2/Projekt/Rift Wingsuit - Server/Assets/Plugins/x86_64/XInputDotNetPure.dll</HintPath>
  </Reference>
  <Reference Include="OpenNI.Net">
- <HintPath>C:/Users/Bambi/Desktop/Git/World2/Rift Wingsuit - Server/Assets/ZigFu/Scripts/_Internal/OpenNI.Net.dll</HintPath>
+ <HintPath>C:/Users/Bambi/Desktop/Git/Rift-WingsuitV2/Projekt/Rift Wingsuit - Server/Assets/ZigFu/Scripts/_Internal/OpenNI.Net.dll</HintPath>
  </Reference>
  <Reference Include="ZDK">
- <HintPath>C:/Users/Bambi/Desktop/Git/World2/Rift Wingsuit - Server/Assets/ZigFu/Scripts/_Internal/ZDK.dll</HintPath>
+ <HintPath>C:/Users/Bambi/Desktop/Git/Rift-WingsuitV2/Projekt/Rift Wingsuit - Server/Assets/ZigFu/Scripts/_Internal/ZDK.dll</HintPath>
  </Reference>
  <Reference Include="UnityEditor.iOS.Extensions.Xcode">
  <HintPath>D:/Unity502f1/Editor/Data/PlaybackEngines/iossupport/UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
