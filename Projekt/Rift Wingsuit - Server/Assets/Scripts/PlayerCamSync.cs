@@ -8,7 +8,7 @@ public class PlayerCamSync : MonoBehaviour {
 	private GameObject cam;
 
 	// Set potision to players eyes
-	private float playerSize = 1.8f;
+	private float playerSize = 3.2f;   // P1 = 1.8f, P2 = 3.2f
 	
 	void Start () {
 		// Get rift cam by tag

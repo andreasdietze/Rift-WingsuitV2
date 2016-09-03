@@ -57,7 +57,7 @@ public class HelicopterFlight : MonoBehaviour {
             //Close Door
             if(shallCloseDoor && Door.rotation.y > doorRotationThreshold)
             {
-                Debug.Log(Door.rotation.y);
+                //Debug.Log(Door.rotation.y);
                 Door.rotation = Quaternion.Euler(Door.eulerAngles.x, Door.eulerAngles.y - closeDoorSpeed, Door.eulerAngles.z);
             }
         }

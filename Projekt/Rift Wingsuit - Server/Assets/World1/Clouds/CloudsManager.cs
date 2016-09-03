@@ -19,7 +19,6 @@ public class CloudsManager : MonoBehaviour {
 
 	void Start () {
 
-		//(Controller)GameObject.Find("RiftCam").GetComponent("KinectController");
 		topLevelClouds = GameObject.Find ("TopLevel");
 		midLevelClouds = GameObject.Find ("MidLevel");
 		mountainClouds = GameObject.Find ("MountainClouds");
