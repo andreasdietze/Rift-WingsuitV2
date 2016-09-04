@@ -1,15 +1,15 @@
-﻿/************************************************************************************
+/************************************************************************************
 
 Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 
-Licensed under the Oculus VR Rift SDK License Version 3.2 (the "License");
+Licensed under the Oculus VR Rift SDK License Version 3.3 (the "License");
 you may not use the Oculus VR Rift SDK except in compliance with the License,
 which is provided at the time of installation or download, or which
 otherwise accompanies this software in either electronic or hard copy form.
 
 You may obtain a copy of the License at
 
-http://www.oculusvr.com/licenses/LICENSE-3.2
+http://www.oculus.com/licenses/LICENSE-3.3
 
 Unless required by applicable law or agreed to in writing, the Oculus VR SDK
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,21 +22,22 @@ limitations under the License.
 using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using VR = UnityEngine.VR;
 
 /// <summary>
-/// Dalculates distance to tracking volume and displays arrows or icons when close.
+/// Calculates distance to tracking volume and displays arrows or icons when close.
 /// </summary>
 [ExecuteInEditMode]
 public class OVRTrackerBounds : MonoBehaviour
 {
-    private Plane [] plane;
-    private int numPlanes = 6;
+    private static readonly int numPlanes = 6;
+    private Plane[] plane = new Plane[numPlanes];
 
     public bool enableFade = true;
     [Tooltip("Distance from volume to start fading")]
     public float fadeDistance = 0.1f;
     [Tooltip("Maximum fade amount (from 0.0 to 1.0)")]
-    public float fadeMaximum = 0.8f;
+    public float fadeMaximum = 0.2f;
     public Color fadeColor = Color.black;
 
     public bool enableIcons = false;
@@ -49,8 +50,10 @@ public class OVRTrackerBounds : MonoBehaviour
     public float arrowDistance = 0.2f;
     public float animSpeed = 10.0f;
     public float animDistance = 0.2f;
+	public float waitTime = 10f;
 
     private Material fadeMaterial = null;
+	private Color iconColor = new Color(1,1,1,1);
 
     public void SetEnableFade(bool b)
     {
@@ -67,7 +70,7 @@ public class OVRTrackerBounds : MonoBehaviour
 		if (!Application.isPlaying)
 			return;
 
-        fadeMaterial = new Material(Shader.Find("Transparent/Diffuse"));
+		fadeMaterial = new Material(Shader.Find("Oculus/Unlit Transparent Color"));
     }
 
     void OnDestroy()
@@ -77,34 +80,33 @@ public class OVRTrackerBounds : MonoBehaviour
     }
 
 	/// <summary>
-	/// Computes frustum planes from tracker frustum parameters.
+	/// Computes frustum planes from the sensor's frustum parameters.
 	/// </summary>
 	void ComputePlanes()
     {
-        OVRTracker.Frustum frustum = OVRManager.tracker.frustum;
-        float nearZ = -frustum.nearZ;
-        float farZ = -frustum.farZ;
+        OVRTracker.Frustum frustum = OVRManager.tracker.GetFrustum();
+        float nearZ = frustum.nearZ;
+        float farZ = frustum.farZ;
         float hFOV = Mathf.Deg2Rad * frustum.fov.x * 0.5f;
         float vFOV = Mathf.Deg2Rad * frustum.fov.y * 0.5f;
         float sx = Mathf.Sin(hFOV);
         float sy = Mathf.Sin(vFOV);
 
-        plane = new Plane[numPlanes];
-		plane[0] = new Plane(Vector3.zero, farZ * new Vector3(sx, -sy, 1f), farZ  * new Vector3(sx, sy, 1f));     // right
-		plane[1] = new Plane(Vector3.zero, farZ * new Vector3(-sx, sy, 1f), farZ  * new Vector3(-sx, -sy, 1f));   // left
-		plane[2] = new Plane(Vector3.zero, farZ * new Vector3(sx, sy, 1f),  farZ  * new Vector3(-sx, sy, 1f));    // top
-		plane[3] = new Plane(Vector3.zero, farZ * new Vector3(-sx, -sy, 1f), farZ * new Vector3(sx, -sy, 1f));    // bottom
-		plane[4] = new Plane(farZ  * new Vector3(-sx, -sy, 1f), farZ  * new Vector3(-sx, sy, 1f), farZ  * new Vector3(sx, sy, 1f));		// far
-		plane[5] = new Plane(nearZ * new Vector3(sx, sy, 1f),   nearZ * new Vector3(-sx, sy, 1f), nearZ * new Vector3(-sx, -sy, 1f) );	// near
+        plane[0] = new Plane(Vector3.zero, farZ * new Vector3(sx, sy, 1f), farZ * new Vector3(sx, -sy, 1f));    // right
+        plane[1] = new Plane(Vector3.zero, farZ * new Vector3(-sx, -sy, 1f), farZ * new Vector3(-sx, sy, 1f));  // left
+        plane[2] = new Plane(Vector3.zero, farZ * new Vector3(-sx, sy, 1f), farZ * new Vector3(sx, sy, 1f));    // top
+        plane[3] = new Plane(Vector3.zero, farZ * new Vector3(sx, -sy, 1f), farZ * new Vector3(-sx, -sy, 1f));  // bottom
+        plane[4] = new Plane(farZ * new Vector3(sx, sy, 1f), farZ * new Vector3(-sx, sy, 1f), farZ * new Vector3(-sx, -sy, 1f));		// far
+		plane[5] = new Plane(nearZ * new Vector3(-sx, -sy, 1f), nearZ * new Vector3(-sx, sy, 1f), nearZ * new Vector3(sx, sy, 1f) );	// near
     }
 	
 	/// <summary>
 	/// Computes signed distance to frustum planes as maximum of distance to each plane
-	/// negative inside volume, positive outside.
+    /// negative inside volume, positive outside.
 	/// </summary>
 	float DistanceToPlanes(Vector3 p, out int closestPlane)
     {
-        float maxd = -1e10f;
+        float maxd = Mathf.NegativeInfinity;
         closestPlane = 0;
         for (int i = 0; i < numPlanes; i++)
         {
@@ -129,43 +131,52 @@ public class OVRTrackerBounds : MonoBehaviour
 
 	void Update ()
 	{
-		if (!Application.isPlaying || !OVRManager.tracker.isPresent)
+		if (!Application.isPlaying || !OVRManager.tracker.isPresent || Time.time < waitTime)
 		{
 			if (arrowObject && arrowObject.activeSelf)
 				arrowObject.SetActive(false);
 
 			if (iconImage != null)
+			{
 				iconImage.enabled = false;
+				iconImage.gameObject.SetActive(false);
+			}
 
 			return;
 		}
 
+        // TODO - probably don't have to do this every frame!
         ComputePlanes();
 
-        OVRPose trackerPose = OVRManager.tracker.GetPose(0f);
+        OVRPose trackerPose = OVRManager.tracker.GetPose();
         Matrix4x4 trackerMat = Matrix4x4.TRS(trackerPose.position, trackerPose.orientation, Vector3.one);
 
         // Transform point into volume space
-		OVRPose headPose = OVRManager.display.GetHeadPose(0f);
+		OVRPose headPose;
+		headPose.position = VR.InputTracking.GetLocalPosition(VR.VRNode.Head);
+
 		Vector3 localPos = trackerMat.inverse.MultiplyPoint(headPose.position);
 
         int closestPlane;
         float dist = DistanceToPlanes(localPos, out closestPlane);
+        //Debug.Log("dist = " + dist);
 
         if (enableIcons)
         {
             // Display arrow icon if approaching edge of volume
             if (dist > -fadeDistance)
             {
-                iconImage.enabled = true;
+                iconImage.gameObject.SetActive(true);
+				iconImage.enabled = true;
                 iconImage.texture = iconTextures[closestPlane];
-                float alpha = SmoothStep(-fadeDistance, 0.0f, dist);
-                iconImage.color = new Color(1.0f, 1.0f, 1.0f, alpha);
+				iconColor.a = SmoothStep(-fadeDistance, 0.0f, dist);
+				iconImage.color = iconColor;
             }
             else
             {
                 iconImage.enabled = false;
-            }
+				iconImage.gameObject.SetActive(false);
+			}
         }
 
         if (arrowObject)
@@ -194,7 +205,7 @@ public class OVRTrackerBounds : MonoBehaviour
 
     void OnRenderObject()
 	{
-		if (!Application.isPlaying || !OVRManager.tracker.isPresent)
+		if (!Application.isPlaying || !OVRManager.tracker.isPresent || Time.time < waitTime)
 			return;
 
         // Full-screen fade

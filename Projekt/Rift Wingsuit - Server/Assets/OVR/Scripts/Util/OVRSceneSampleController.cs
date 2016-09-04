@@ -1,15 +1,15 @@
-﻿/************************************************************************************
+/************************************************************************************
 
 Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 
-Licensed under the Oculus VR Rift SDK License Version 3.2 (the "License");
+Licensed under the Oculus VR Rift SDK License Version 3.3 (the "License");
 you may not use the Oculus VR Rift SDK except in compliance with the License,
 which is provided at the time of installation or download, or which
 otherwise accompanies this software in either electronic or hard copy form.
 
 You may obtain a copy of the License at
 
-http://www.oculusvr.com/licenses/LICENSE-3.2
+http://www.oculus.com/licenses/LICENSE-3.3
 
 Unless required by applicable law or agreed to in writing, the Oculus VR SDK
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,11 @@ limitations under the License.
 
 using UnityEngine;
 using System.Collections;
+using VR = UnityEngine.VR;
 
+/// <summary>
+/// Sample that allows you to play with various VR settings. 
+/// </summary>
 public class OVRSceneSampleController : MonoBehaviour
 {
     /// <summary>
@@ -56,10 +60,6 @@ public class OVRSceneSampleController : MonoBehaviour
     // We want to hold onto GridCube, for potential sharing
     // of the menu RenderTarget
     OVRGridCube gridCube = null;
-
-    // We want to show debug information
-    OVRDebugInfo debugInfo = null;
-
 
 #if	SHOW_DK2_VARIABLES
 	private string strVisionMode = "Vision Enabled: ON";
@@ -114,11 +114,11 @@ public class OVRSceneSampleController : MonoBehaviour
         // Make sure to hide cursor 
         if (Application.isEditor == false)
         {
-#if UNITY_5_0 || UNITY_5_1
+#if UNITY_5
 			Cursor.visible = false; 
 			Cursor.lockState = CursorLockMode.Locked;
 #else
-            Cursor.visible = false;
+            Screen.showCursor = false;
             Screen.lockCursor = true;
 #endif
         }
@@ -129,10 +129,6 @@ public class OVRSceneSampleController : MonoBehaviour
             // Add a GridCube component to this object
             gridCube = gameObject.AddComponent<OVRGridCube>();
             gridCube.SetOVRCameraController(ref cameraController);
-
-            debugInfo = gameObject.AddComponent<OVRDebugInfo>();
-            if(playerController != null)
-                debugInfo.SetPlayerController(ref playerController);
         } 
     }
 
@@ -157,7 +153,7 @@ public class OVRSceneSampleController : MonoBehaviour
             Screen.fullScreen = !Screen.fullScreen;
 
         if (Input.GetKeyDown(KeyCode.M))
-            OVRManager.display.mirrorMode = !OVRManager.display.mirrorMode;
+			VR.VRSettings.showDeviceView = !VR.VRSettings.showDeviceView;
 
 #if !UNITY_ANDROID || UNITY_EDITOR
         // Escape Application
@@ -211,7 +207,6 @@ public class OVRSceneSampleController : MonoBehaviour
         }
 
         playerController.SetRotationScaleMultiplier(rotationScaleMultiplier);
-        debugInfo.UpdateSpeedAndRotationScaleMultiplier(moveScaleMultiplier, rotationScaleMultiplier);
     }    
       
     /// <summary>

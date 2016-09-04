@@ -2,14 +2,14 @@
 
 Copyright   :   Copyright 2014 Oculus VR, LLC. All Rights reserved.
 
-Licensed under the Oculus VR Rift SDK License Version 3.2 (the "License");
+Licensed under the Oculus VR Rift SDK License Version 3.3 (the "License");
 you may not use the Oculus VR Rift SDK except in compliance with the License,
 which is provided at the time of installation or download, or which
 otherwise accompanies this software in either electronic or hard copy form.
 
 You may obtain a copy of the License at
 
-http://www.oculusvr.com/licenses/LICENSE-3.2
+http://www.oculus.com/licenses/LICENSE-3.3
 
 Unless required by applicable law or agreed to in writing, the Oculus VR SDK
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,9 @@ limitations under the License.
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using VR = UnityEngine.VR;
 
 /// <summary>
 /// A head-tracked stereoscopic virtual reality camera rig.
@@ -55,317 +57,248 @@ public class OVRCameraRig : MonoBehaviour
 	/// </summary>
 	public Transform rightEyeAnchor { get; private set; }
 	/// <summary>
-	/// Always coincides with the pose of the tracker.
+	/// Always coincides with the pose of the left hand.
+	/// </summary>
+	public Transform leftHandAnchor { get; private set; }
+	/// <summary>
+	/// Always coincides with the pose of the right hand.
+	/// </summary>
+	public Transform rightHandAnchor { get; private set; }
+	/// <summary>
+	/// Always coincides with the pose of the sensor.
 	/// </summary>
 	public Transform trackerAnchor { get; private set; }
 	/// <summary>
 	/// Occurs when the eye pose anchors have been set.
 	/// </summary>
 	public event System.Action<OVRCameraRig> UpdatedAnchors;
-	
-	private bool needsCameraConfigure = true;
+
 	private readonly string trackingSpaceName = "TrackingSpace";
 	private readonly string trackerAnchorName = "TrackerAnchor";
 	private readonly string eyeAnchorName = "EyeAnchor";
+	private readonly string handAnchorName = "HandAnchor";
 	private readonly string legacyEyeAnchorName = "Camera";
 
-	// Wurde für alte Version über zwei Displays verwendet
-	//public bool actionCam = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+    bool correctedTrackingSpace = false;
+#endif
 
-	public float farClipPlane = 10000.0f;
-	
-	#region Unity Messages
+#region Unity Messages
 	private void Awake()
 	{
 		EnsureGameObjectIntegrity();
-		
-		if (!Application.isPlaying)
-			return;
-		
-		OVRManager.Created += () => { needsCameraConfigure = true; };
-		OVRManager.NativeTextureScaleModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.VirtualTextureScaleModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.EyeTextureAntiAliasingModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.EyeTextureDepthModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.EyeTextureFormatModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.MonoscopicModified += (prev, current) => { needsCameraConfigure = true; };
-		OVRManager.HdrModified += (prev, current) => { needsCameraConfigure = true; };
 	}
-	
+
 	private void Start()
 	{
 		EnsureGameObjectIntegrity();
-		
+
 		if (!Application.isPlaying)
 			return;
-		
-		UpdateCameras();
+
 		UpdateAnchors();
-		
-		// First multidisplay test
-		// http://forum.unity3d.com/threads/2-cameras-running-the-same-time.44911/
-		
-		// Override clipping params
-		leftEyeCamera.farClipPlane = farClipPlane;
-		rightEyeCamera.farClipPlane = farClipPlane;
-		
-		// Set depth params for multiple cams like actioncam.
-		// This settings represent the foreground settings for the rift.
-		// Background settings have a depth of one.
-		leftEyeCamera.depth = 1;
-		rightEyeCamera.depth = 1;
-		
-		// Set clear flag (depth preferred)
-		// Set background cam clear flag to solid Color.
-		leftEyeCamera.clearFlags = CameraClearFlags.Skybox;
-		rightEyeCamera.clearFlags = CameraClearFlags.Skybox;
-		
-		//if (actionCam) {
-			
-			//leftEyeCamera.rect = new Rect (0.5f, 0.0f, 0.25f, 1.0f);
-			//rightEyeCamera.rect = new Rect (0.75f, 0.0f, 0.25f, 1.0f);
-		//}
-		
-		//leftEyeCamera.pixelRect = new Rect (0.5f, 0.0f, 0.75f, 1.0f);
-		//rightEyeCamera.pixelRect = new Rect (0.075f, 0.0f, 1.0f, 1.0f);
 	}
-	
-	#if !UNITY_ANDROID || UNITY_EDITOR
-	private void LateUpdate()
-		#else
-		private void Update()
-			#endif
+
+	private void Update()
 	{
 		EnsureGameObjectIntegrity();
 		
 		if (!Application.isPlaying)
 			return;
-		
-		UpdateCameras();
+
 		UpdateAnchors();
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+
+        if (!correctedTrackingSpace)
+        {
+            //HACK: Unity 5.1.1p3 double-counts the head model on Android. Subtract it off in the reference frame.
+
+            var headModel = new Vector3(0f, OVRManager.profile.eyeHeight - OVRManager.profile.neckHeight, OVRManager.profile.eyeDepth);
+            var eyePos = -headModel + centerEyeAnchor.localRotation * headModel;
+
+            if ((eyePos - centerEyeAnchor.localPosition).magnitude > 0.01f)
+            {
+                trackingSpace.localPosition = trackingSpace.localPosition - 2f * (trackingSpace.localRotation * headModel);
+                correctedTrackingSpace = true;
+            }
+        }
+#endif
 	}
-	
-	#endregion
-	
+
+#endregion
+
 	private void UpdateAnchors()
 	{
 		bool monoscopic = OVRManager.instance.monoscopic;
-		
-		OVRPose tracker = OVRManager.tracker.GetPose(0f);
-		OVRPose hmdLeftEye = OVRManager.display.GetEyePose(OVREye.Left);
-		OVRPose hmdRightEye = OVRManager.display.GetEyePose(OVREye.Right);
-		
+
+		OVRPose tracker = OVRManager.tracker.GetPose();
+
 		trackerAnchor.localRotation = tracker.orientation;
-		centerEyeAnchor.localRotation = hmdLeftEye.orientation; // using left eye for now
-		leftEyeAnchor.localRotation = monoscopic ? centerEyeAnchor.localRotation : hmdLeftEye.orientation;
-		rightEyeAnchor.localRotation = monoscopic ? centerEyeAnchor.localRotation : hmdRightEye.orientation;
-		
+		centerEyeAnchor.localRotation = VR.InputTracking.GetLocalRotation(VR.VRNode.CenterEye);
+        leftEyeAnchor.localRotation = monoscopic ? centerEyeAnchor.localRotation : VR.InputTracking.GetLocalRotation(VR.VRNode.LeftEye);
+		rightEyeAnchor.localRotation = monoscopic ? centerEyeAnchor.localRotation : VR.InputTracking.GetLocalRotation(VR.VRNode.RightEye);
+		leftHandAnchor.localRotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.LTouch);
+        rightHandAnchor.localRotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTouch);
+
 		trackerAnchor.localPosition = tracker.position;
-		centerEyeAnchor.localPosition = 0.5f * (hmdLeftEye.position + hmdRightEye.position);
-		leftEyeAnchor.localPosition = monoscopic ? centerEyeAnchor.localPosition : hmdLeftEye.position;
-		rightEyeAnchor.localPosition = monoscopic ? centerEyeAnchor.localPosition : hmdRightEye.position;
-		
+		centerEyeAnchor.localPosition = VR.InputTracking.GetLocalPosition(VR.VRNode.CenterEye);
+		leftEyeAnchor.localPosition = monoscopic ? centerEyeAnchor.localPosition : VR.InputTracking.GetLocalPosition(VR.VRNode.LeftEye);
+		rightEyeAnchor.localPosition = monoscopic ? centerEyeAnchor.localPosition : VR.InputTracking.GetLocalPosition(VR.VRNode.RightEye);
+        leftHandAnchor.localPosition = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+        rightHandAnchor.localPosition = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+
 		if (UpdatedAnchors != null)
 		{
 			UpdatedAnchors(this);
 		}
 	}
-	
-	private void UpdateCameras()
-	{
-		if (!OVRManager.instance.isVRPresent)
-			return;
-		
-		if (needsCameraConfigure)
-		{
-			leftEyeCamera = ConfigureCamera(OVREye.Left);
-			rightEyeCamera = ConfigureCamera(OVREye.Right);
-			
-			// Override clipping params
-			leftEyeCamera.farClipPlane = farClipPlane;
-			rightEyeCamera.farClipPlane = farClipPlane;
-			
-			// Set depth params for multiple cams like actioncam.
-			// This settings represent the foreground settings for the rift.
-			// Background settings have a depth of one.
-			leftEyeCamera.depth = 1;
-			rightEyeCamera.depth = 1;
-			
-			// Set clear flag (depth preferred)
-			// Set background cam clear flag to solid Color.
-			leftEyeCamera.clearFlags = CameraClearFlags.Skybox;
-			rightEyeCamera.clearFlags = CameraClearFlags.Skybox;
-			
-			//if(actionCam){ 
-				//leftEyeCamera.rect = new Rect (0.5f, 0.0f, 0.25f, 1.0f);
-				//rightEyeCamera.rect = new Rect (0.75f, 0.0f, 0.25f, 1.0f);
-			//}
-			
-			//leftEyeCamera.pixelRect = new Rect (0.5f, 0.0f, 0.75f, 1.0f);
-			//rightEyeCamera.pixelRect = new Rect (0.075f, 0.0f, 1.0f, 1.0f);
-			
-			#if !UNITY_ANDROID || UNITY_EDITOR
-			needsCameraConfigure = false;
-			#endif
-		}
-	}
-	
+
 	public void EnsureGameObjectIntegrity()
 	{
 		if (trackingSpace == null)
 			trackingSpace = ConfigureRootAnchor(trackingSpaceName);
-		
+
 		if (leftEyeAnchor == null)
-			leftEyeAnchor = ConfigureEyeAnchor(trackingSpace, OVREye.Left);
-		
+            leftEyeAnchor = ConfigureEyeAnchor(trackingSpace, VR.VRNode.LeftEye);
+
 		if (centerEyeAnchor == null)
-			centerEyeAnchor = ConfigureEyeAnchor(trackingSpace, OVREye.Center);
-		
+            centerEyeAnchor = ConfigureEyeAnchor(trackingSpace, VR.VRNode.CenterEye);
+
 		if (rightEyeAnchor == null)
-			rightEyeAnchor = ConfigureEyeAnchor(trackingSpace, OVREye.Right);
-		
+            rightEyeAnchor = ConfigureEyeAnchor(trackingSpace, VR.VRNode.RightEye);
+
+		if (leftHandAnchor == null)
+            leftHandAnchor = ConfigureHandAnchor(trackingSpace, OVRPlugin.Node.HandLeft);
+
+		if (rightHandAnchor == null)
+            rightHandAnchor = ConfigureHandAnchor(trackingSpace, OVRPlugin.Node.HandRight);
+
 		if (trackerAnchor == null)
 			trackerAnchor = ConfigureTrackerAnchor(trackingSpace);
-		
-		if (leftEyeCamera == null)
+
+        if (leftEyeCamera == null || rightEyeCamera == null)
 		{
-			leftEyeCamera = leftEyeAnchor.GetComponent<Camera>();
-			if (leftEyeCamera == null)
+			Camera centerEyeCamera = centerEyeAnchor.GetComponent<Camera>();
+
+			if (centerEyeCamera == null)
 			{
-				leftEyeCamera = leftEyeAnchor.gameObject.AddComponent<Camera>();
+				centerEyeCamera = centerEyeAnchor.gameObject.AddComponent<Camera>();
 			}
-			#if UNITY_ANDROID && !UNITY_EDITOR
-			if (leftEyeCamera.GetComponent<OVRPostRender>() == null)
+
+			// Only the center eye camera should now render.
+			var cameras = gameObject.GetComponentsInChildren<Camera>();
+			for (int i = 0; i < cameras.Length; i++)
 			{
-				leftEyeCamera.gameObject.AddComponent<OVRPostRender>();
+				Camera cam = cameras[i];
+
+				if (cam == centerEyeCamera)
+					continue;
+
+				if (cam && (cam.transform == leftEyeAnchor || cam.transform == rightEyeAnchor) && cam.enabled)
+				{
+					Debug.LogWarning("Having a Camera on " + cam.name + " is deprecated. Disabling the Camera. Please use the Camera on " + centerEyeCamera.name + " instead.");
+					cam.enabled = false;
+
+					// Use "MainCamera" if the previous cameras used it.
+					if (cam.CompareTag("MainCamera"))
+						centerEyeCamera.tag = "MainCamera";
+				}
 			}
-			#endif
-		}
-		
-		if (rightEyeCamera == null)
-		{
-			rightEyeCamera = rightEyeAnchor.GetComponent<Camera>();
-			if (rightEyeCamera == null)
-			{
-				rightEyeCamera = rightEyeAnchor.gameObject.AddComponent<Camera>();
-			}
-			#if UNITY_ANDROID && !UNITY_EDITOR
-			if (rightEyeCamera.GetComponent<OVRPostRender>() == null)
-			{
-				rightEyeCamera.gameObject.AddComponent<OVRPostRender>();
-			}
-			#endif
+			
+			leftEyeCamera = centerEyeCamera;
+			rightEyeCamera = centerEyeCamera;
 		}
 	}
-	
+
 	private Transform ConfigureRootAnchor(string name)
 	{
 		Transform root = transform.Find(name);
-		
+
 		if (root == null)
 		{
 			root = new GameObject(name).transform;
 		}
-		
+
 		root.parent = transform;
 		root.localScale = Vector3.one;
 		root.localPosition = Vector3.zero;
 		root.localRotation = Quaternion.identity;
-		
+
 		return root;
 	}
-	
-	private Transform ConfigureEyeAnchor(Transform root, OVREye eye)
+
+	private Transform ConfigureEyeAnchor(Transform root, VR.VRNode eye)
 	{
-		string name = eye.ToString() + eyeAnchorName;
+		string eyeName = (eye == VR.VRNode.CenterEye) ? "Center" : (eye == VR.VRNode.LeftEye) ? "Left" : "Right";
+		string name = eyeName + eyeAnchorName;
 		Transform anchor = transform.Find(root.name + "/" + name);
-		
+
 		if (anchor == null)
 		{
 			anchor = transform.Find(name);
 		}
-		
+
 		if (anchor == null)
 		{
 			string legacyName = legacyEyeAnchorName + eye.ToString();
 			anchor = transform.Find(legacyName);
 		}
-		
+
 		if (anchor == null)
 		{
 			anchor = new GameObject(name).transform;
 		}
-		
+
 		anchor.name = name;
 		anchor.parent = root;
 		anchor.localScale = Vector3.one;
 		anchor.localPosition = Vector3.zero;
 		anchor.localRotation = Quaternion.identity;
-		
+
 		return anchor;
 	}
-	
-	private Transform ConfigureTrackerAnchor(Transform root)
+
+	private Transform ConfigureHandAnchor(Transform root, OVRPlugin.Node hand)
 	{
-		string name = trackerAnchorName;
+		string handName = (hand == OVRPlugin.Node.HandLeft) ? "Left" : "Right";
+		string name = handName + handAnchorName;
 		Transform anchor = transform.Find(root.name + "/" + name);
-		
+
+		if (anchor == null)
+		{
+			anchor = transform.Find(name);
+		}
+
 		if (anchor == null)
 		{
 			anchor = new GameObject(name).transform;
 		}
-		
+
+		anchor.name = name;
 		anchor.parent = root;
 		anchor.localScale = Vector3.one;
 		anchor.localPosition = Vector3.zero;
 		anchor.localRotation = Quaternion.identity;
-		
+
 		return anchor;
 	}
-	
-	private Camera ConfigureCamera(OVREye eye)
+
+	private Transform ConfigureTrackerAnchor(Transform root)
 	{
-		Transform anchor = (eye == OVREye.Left) ? leftEyeAnchor : rightEyeAnchor;
-		Camera cam = anchor.GetComponent<Camera>();
-		
-		OVRDisplay.EyeRenderDesc eyeDesc = OVRManager.display.GetEyeRenderDesc(eye);
-		
-		cam.fieldOfView = eyeDesc.fov.y;
-		cam.aspect = eyeDesc.resolution.x / eyeDesc.resolution.y;
-		cam.targetTexture = OVRManager.display.GetEyeTexture(eye);
-		cam.hdr = OVRManager.instance.hdr;
-		
-		#if UNITY_ANDROID && !UNITY_EDITOR
-		// Enforce camera render order
-		cam.depth = (eye == OVREye.Left) ?
-			(int)RenderEventType.LeftEyeEndFrame :
-				(int)RenderEventType.RightEyeEndFrame;
-		
-		// If we don't clear the color buffer with a glClear, tiling GPUs
-		// will be forced to do an "unresolve" and read back the color buffer information.
-		// The clear is free on PowerVR, and possibly Mali, but it is a performance cost
-		// on Adreno, and we would be better off if we had the ability to discard/invalidate
-		// the color buffer instead of clearing.
-		
-		// NOTE: The color buffer is not being invalidated in skybox mode, forcing an additional,
-		// wasted color buffer read before the skybox is drawn.
-		bool hasSkybox = ((cam.clearFlags == CameraClearFlags.Skybox) &&
-		                  ((cam.gameObject.GetComponent<Skybox>() != null) || (RenderSettings.skybox != null)));
-		cam.clearFlags = (hasSkybox) ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
-		#else
-		cam.rect = new Rect(0f, 0f, OVRManager.instance.virtualTextureScale, OVRManager.instance.virtualTextureScale);
-		#endif
-		
-		// When rendering monoscopic, we will use the left camera render for both eyes.
-		if (eye == OVREye.Right)
+		string name = trackerAnchorName;
+		Transform anchor = transform.Find(root.name + "/" + name);
+
+		if (anchor == null)
 		{
-			cam.enabled = !OVRManager.instance.monoscopic;
+			anchor = new GameObject(name).transform;
 		}
-		
-		// AA is documented to have no effect in deferred, but it causes black screens.
-		if (cam.actualRenderingPath == RenderingPath.DeferredLighting)
-			OVRManager.instance.eyeTextureAntiAliasing = OVRManager.RenderTextureAntiAliasing._1;
-		
-		return cam;
+
+		anchor.parent = root;
+		anchor.localScale = Vector3.one;
+		anchor.localPosition = Vector3.zero;
+		anchor.localRotation = Quaternion.identity;
+
+		return anchor;
 	}
 }
