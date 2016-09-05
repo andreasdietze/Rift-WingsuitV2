@@ -21,8 +21,8 @@ public class TriggerWP : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		// Access to player script
-		if(nManager.serverInitiated)
-			player = (Player)GameObject.FindGameObjectWithTag ("Player").GetComponent ("Player");
+		//if(nManager.serverInitiated)
+			//player = (Player)GameObject.FindGameObjectWithTag ("Player").GetComponent ("Player");
 	}
 	
 	void OnTriggerEnter(Collider other){
