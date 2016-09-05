@@ -30,7 +30,7 @@ public class Player : MonoBehaviour
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info){
 
 		// Oclus rift transformation 
-		oculusTransform = GameObject.FindGameObjectWithTag ("RiftCenter").transform;
+		oculusTransform = GameObject.FindGameObjectWithTag ("MainCamera").transform;
 
 		// Sync transformation
 		Vector3 syncPosition = Vector3.zero;
