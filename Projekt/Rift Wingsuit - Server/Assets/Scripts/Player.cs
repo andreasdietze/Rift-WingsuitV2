@@ -18,25 +18,35 @@ public class Player : MonoBehaviour
 	private Quaternion syncEndRotation = Quaternion.identity;
 	private Quaternion syncStartRotation = Quaternion.identity;
 
-	// Get ovr cam rig
-	//private Component oculus;
+	// Oculus transform object
 	private Transform oculusTransform;
 
-	// Player status
+    // Kinect values
+    private HSDOutputText kinectOutput;
+
+    // Player score
 	private int score = 0;
+
+    // Player status
 	public bool collideWithWP = false;
 
 	// Only send date
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info){
 
-		// Oclus rift transformation 
-		oculusTransform = GameObject.FindGameObjectWithTag ("MainCamera").transform;
-
-		// Sync transformation
+		// Player transformation
 		Vector3 syncPosition = Vector3.zero;
 		Vector3 syncVelocity = Vector3.zero;
 		Quaternion syncRotation = Quaternion.identity;
+
+        // Oculus rotation 
+        oculusTransform = GameObject.FindGameObjectWithTag("RiftCenter").transform;
 		Quaternion syncOVRRotation = Quaternion.identity;
+
+        // Kinect values
+        kinectOutput = (HSDOutputText)GameObject.FindGameObjectWithTag("MainCamera")
+                                                .GetComponent("HSDOutputText");
+        float syncDeltaY = 0.0f;
+        float syncDeltaZ = 0.0f;
 
 		// Playerscore
 		int syncScore = 0;
@@ -57,6 +67,12 @@ public class Player : MonoBehaviour
 			// Send OVR cam (seperate oculus head rotation)
 			syncOVRRotation = oculusTransform.transform.rotation;
 			stream.Serialize(ref syncOVRRotation);
+
+            // Send Kinect values
+            syncDeltaY = kinectOutput.GetDeltaY();
+            stream.Serialize(ref syncDeltaY);
+            syncDeltaZ = kinectOutput.GetDeltaZ();
+            stream.Serialize(ref syncDeltaZ);
 
 			// Send score
 			syncScore = score;

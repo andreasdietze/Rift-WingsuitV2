@@ -119,6 +119,10 @@ public class KinectController : Controller
         lastViewport = new Vector3(transform.eulerAngles.x + lastViewport.y + kinectPitch,
 		                           transform.eulerAngles.y + lastViewport.x + kinectYaw, 0);// * sensitivity;
 
+        // Testing kinect animation
+        //lastViewport = new Vector3(transform.eulerAngles.x + lastViewport.y,
+                           //transform.eulerAngles.y + lastViewport.x, 0);// * sensitivity;
+
 
 		// Lock cam rotation from 0-90 on x
 		if (useMouse) {
