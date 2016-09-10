@@ -83,6 +83,7 @@ public class FlyCam : MonoBehaviour
 
 		slrc = (StartLevelRayCaster)GameObject.FindGameObjectWithTag ("MainCamera").GetComponent ("StartLevelRayCaster");
 		if (slrc.startGame) {
+            //TODO: Bewege dich aus dem Helikopter raus
 			playerRidgid.useGravity = true;
 		}
 

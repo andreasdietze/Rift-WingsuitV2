@@ -45,7 +45,7 @@ public class StartLevelRayCaster : MonoBehaviour {
 		}
 
 		// Launch via kb
-		if (Input.GetKeyDown (KeyCode.G))
+        if (Input.GetKeyDown(KeyCode.G))
 			startGame = true;
 	}
 }
