@@ -36,6 +36,8 @@ public class FlyCam : MonoBehaviour
 	// Script access
 	NetworkManager nManager;
 	StartLevelRayCaster slrc;
+    public PlayerForwardPush pfp;
+    public Transform HeliTransform; 
 
 	// Debug font
 	GUIStyle font;
@@ -84,7 +86,13 @@ public class FlyCam : MonoBehaviour
 		slrc = (StartLevelRayCaster)GameObject.FindGameObjectWithTag ("MainCamera").GetComponent ("StartLevelRayCaster");
 		if (slrc.startGame) {
             //TODO: Bewege dich aus dem Helikopter raus
-			playerRidgid.useGravity = true;
+            if (!pfp.finished){
+
+                transform.Translate(pfp.vecToAdd);
+                transform.rotation = HeliTransform.rotation * Quaternion.Euler(0, 90, 0);
+            }
+            else
+			    playerRidgid.useGravity = true;
 		}
 
 		//Debug.Log (v);
