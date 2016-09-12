@@ -68,7 +68,7 @@ public class CloudsManager : MonoBehaviour {
 	// Different settings for cloud systems.
 	public enum Weather  {Sunny, Cloudy, Stormy, Rainy};
     private enum CloudSize { Small, Medium, Large, XXL };
-	public Weather weather = Weather.Sunny;
+	public Weather weather = Weather.Rainy;
 
     private GameObject topLevel;
     private GameObject midLevel;
@@ -133,7 +133,7 @@ public class CloudsManager : MonoBehaviour {
         setCloudSize(midLevelScript, CloudSize.Large);
         CloudColor.SetRainyColor(midLevelScript);
 
-        mountainLevel.SetActive(false);
+        mountainLevel.SetActive(true);
     }
 
 	void Start () {
