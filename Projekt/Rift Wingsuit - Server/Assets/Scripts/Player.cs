@@ -28,7 +28,7 @@ public class Player : MonoBehaviour
 	private int score = 20;
 
     // Weather type
-    private int weatherType = 3;
+    public int weatherType = 0;
 
     // Player status
 	public bool collideWithWP = false;

@@ -70,9 +70,13 @@ public class CloudsManager : MonoBehaviour {
     private enum CloudSize { Small, Medium, Large, XXL };
 	public Weather weather = Weather.Rainy;
 
+    private GameController.WeatherState weatherState;
+
     private GameObject topLevel;
     private GameObject midLevel;
     private GameObject mountainLevel;
+    public NetworkManager nManager;
+    private Player player;
 
     private CloudsToy GetSettingsFrom(GameObject obj)
     {
@@ -142,29 +146,56 @@ public class CloudsManager : MonoBehaviour {
 		midLevel = GameObject.Find ("MidLevel");
 		mountainLevel = GameObject.Find ("MountainClouds");
 
+        weatherState = GameController.instance.currentWeather; 
 		// Default and initial weather is sunny. 
-		switch(weather) {
+		switch(weatherState) {
 			// Only skydome clouds.
-		case Weather.Sunny :
+		case GameController.WeatherState.Sunny :
                 setSunny();
 			break;
 			// Top and midLevel clouds.
-		case Weather.Cloudy :
+        case GameController.WeatherState.SunnyAndCloudy:
             setCloudy();
 			break;
 			// All cloud systems.
-		case Weather.Stormy :
+        case GameController.WeatherState.Cloudy:
             setStormy();
 			break;
-        case Weather.Rainy:
+        case GameController.WeatherState.VeryCloudy:
             setRainy();
             break;
-		default: weather = Weather.Sunny;
+        default: weatherState = GameController.WeatherState.Sunny;
 			break;
 		}
 	}
 
 	void Update () {
-	
+
+        if (nManager.serverInitiated)
+        {
+            player = (Player)GameObject.FindGameObjectWithTag("Player").GetComponent("Player");
+
+            // Default and initial weather is sunny. 
+            switch (weatherState)
+            {
+                // Only skydome clouds.
+                case GameController.WeatherState.Sunny:
+                    player.weatherType = 0;
+                    break;
+                // Top and midLevel clouds.
+                case GameController.WeatherState.SunnyAndCloudy:
+                    player.weatherType = 1;
+                    break;
+                // All cloud systems.
+                case GameController.WeatherState.Cloudy:
+                    player.weatherType = 2;
+                    break;
+                case GameController.WeatherState.VeryCloudy:
+                    player.weatherType = 3;
+                    break;
+                default: player.weatherType = 0;
+                    break;
+            }
+        }
 	}
 }
