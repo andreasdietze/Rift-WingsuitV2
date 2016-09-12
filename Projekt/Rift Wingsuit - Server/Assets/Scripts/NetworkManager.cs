@@ -40,13 +40,14 @@ public class NetworkManager : MonoBehaviour
     // global unity master server
     private void StartServer()
     {
-        Debug.Log(GameController.instance.ip);
+        //Debug.Log("Connected to : " + GameController.instance.ip);
+
         // Settings for own master server (test)
         if (useOwnMasterServer)
         {
-            MasterServer.ipAddress = GameController.instance.ip; //"192.168.0.194";
+            MasterServer.ipAddress = "192.168.0.194";   //"192.168.0.194";  GameController.instance.ip;
             MasterServer.port = 23466;
-            Network.natFacilitatorIP = GameController.instance.ip; //"192.168.0.194";
+            Network.natFacilitatorIP = "192.168.0.194"; //"192.168.0.194";  GameController.instance.ip;
             Network.natFacilitatorPort = 50005;
         }
 

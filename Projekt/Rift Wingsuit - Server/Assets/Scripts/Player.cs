@@ -25,7 +25,10 @@ public class Player : MonoBehaviour
     private HSDOutputText kinectOutput;
 
     // Player score
-	private int score = 0;
+	private int score = 20;
+
+    // Weather type
+    private int weatherType = 3;
 
     // Player status
 	public bool collideWithWP = false;
@@ -50,6 +53,9 @@ public class Player : MonoBehaviour
 
 		// Playerscore
 		int syncScore = 0;
+
+        // Weather
+        int syncWeatherType = 0;
 
 		if (stream.isWriting){ // Send data
 			// Final Position
@@ -78,6 +84,10 @@ public class Player : MonoBehaviour
 			syncScore = score;
 			stream.Serialize(ref syncScore);
 			//Debug.Log(syncScore);
+
+            // Send weather type
+            syncWeatherType = weatherType;
+            stream.Serialize(ref syncWeatherType);
 
 		}
 		else {// Receive data
