@@ -90,6 +90,7 @@ public class GameController : MonoBehaviour {
                 }
                 break;
             case 2:
+                Cursor.lockState = CursorLockMode.None;
                 break;
         }
     }

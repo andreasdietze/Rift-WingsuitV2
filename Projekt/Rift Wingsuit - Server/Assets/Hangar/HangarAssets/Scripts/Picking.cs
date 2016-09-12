@@ -39,6 +39,7 @@ public class Picking : MonoBehaviour {
                         break;
                     case "Start":
                         RadialProgressBar.instance.Clear();
+                        Cursor.lockState = CursorLockMode.None;
                         SceneManager.LoadScene(2);
                         GameController.instance.currentScene = 2;
                         break;
