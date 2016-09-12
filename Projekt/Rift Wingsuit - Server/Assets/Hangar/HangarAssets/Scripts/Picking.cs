@@ -9,6 +9,7 @@ public class Picking : MonoBehaviour {
 	//https://www.youtube.com/watch?v=_3CG-lzy0RA
 	public float raySize;
 	public GameObject[] menuObjects;
+    public GameObject forwardEmpty;
 	string lastHoverTag, currentHoverTag, currentEvent;
     bool collided, progressStarted;
     public bool lockBar;
@@ -22,6 +23,7 @@ public class Picking : MonoBehaviour {
 		collided = progressStarted = lockBar = false;
         itemGlow = Shader.Find("Custom/ItemGlow");
         standard = Shader.Find("Standard");
+        forwardEmpty = GameObject.Find("ForwardEmpty");
     }
 	
 	// Update is called once per frame
@@ -39,6 +41,7 @@ public class Picking : MonoBehaviour {
                         break;
                     case "Start":
                         RadialProgressBar.instance.Clear();
+                        Cursor.visible = true;
                         Cursor.lockState = CursorLockMode.None;
                         SceneManager.LoadScene(2);
                         GameController.instance.currentScene = 2;
@@ -72,7 +75,11 @@ public class Picking : MonoBehaviour {
 
             RaycastHit hit;
 
-            Vector3 forward = transform.TransformDirection(Vector3.forward) * raySize;
+            //Vector3 forward = transform.TransformDirection(Vector3.forward) * raySize;
+
+            //Ray pickingRay = new Ray(transform.position, forward);
+
+            Vector3 forward = (forwardEmpty.GetComponent<Transform>().position - transform.position) * raySize;
 
             Ray pickingRay = new Ray(transform.position, forward);
 
