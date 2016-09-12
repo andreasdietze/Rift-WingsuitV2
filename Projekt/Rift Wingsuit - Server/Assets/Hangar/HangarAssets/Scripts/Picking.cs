@@ -14,6 +14,7 @@ public class Picking : MonoBehaviour {
     bool collided, progressStarted;
     public bool lockBar;
     Shader itemGlow, standard;
+    public Transform oculusTransform;
 
 	// Use this for initialization
 	void Start () {
@@ -75,11 +76,7 @@ public class Picking : MonoBehaviour {
 
             RaycastHit hit;
 
-            //Vector3 forward = transform.TransformDirection(Vector3.forward) * raySize;
-
-            //Ray pickingRay = new Ray(transform.position, forward);
-
-            Vector3 forward = (forwardEmpty.GetComponent<Transform>().position - transform.position) * raySize;
+            Vector3 forward = transform.TransformDirection(Vector3.forward) * raySize;
 
             Ray pickingRay = new Ray(transform.position, forward);
 
