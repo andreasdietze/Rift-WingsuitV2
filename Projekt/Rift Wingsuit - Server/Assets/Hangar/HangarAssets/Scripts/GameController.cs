@@ -12,6 +12,8 @@ public class GameController : MonoBehaviour {
     GameObject x, y;
     Slider sX, sY;
     public bool paused;
+    public enum WeatherState { Sunny, SunnyAndCloudy, Cloudy, VeryCloudy };
+    public WeatherState currentWeather;
 
     void Awake()
     {
@@ -28,6 +30,7 @@ public class GameController : MonoBehaviour {
         xAxisAdjust = 0.5f;//auf sinnvollen Startwert zu ändern (später auf File auslagern)
         yAxisAdjust = 0.5f;//auf sinnvollen Startwert zu ändern (später auf File auslagern)
         paused = false;
+        currentWeather = WeatherState.Sunny;
     }
 
     void Update()

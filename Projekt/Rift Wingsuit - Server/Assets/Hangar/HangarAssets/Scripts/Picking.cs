@@ -10,6 +10,7 @@ public class Picking : MonoBehaviour {
 	public float raySize;
 	public GameObject[] menuObjects;
     public GameObject forwardEmpty;
+    GameObject currentWeatherObject;
 	string lastHoverTag, currentHoverTag, currentEvent;
     bool collided, progressStarted;
     public bool lockBar;
@@ -25,6 +26,8 @@ public class Picking : MonoBehaviour {
         itemGlow = Shader.Find("Custom/ItemGlow");
         standard = Shader.Find("Standard");
         forwardEmpty = GameObject.Find("ForwardEmpty");
+        currentWeatherObject = GameObject.Find("Sunny");
+        currentWeatherObject.GetComponent<SpriteRenderer>().material.shader = itemGlow;
     }
 	
 	// Update is called once per frame
@@ -71,6 +74,37 @@ public class Picking : MonoBehaviour {
                         confirmBtn.interactable = true;
                         GameObject.Find("EventSystem").GetComponent<EventSystem>().SetSelectedGameObject(GameObject.Find("SliderX"));
                         break;
+                    case "Weather":
+                        RadialProgressBar.instance.Clear();
+                        foreach (GameObject menuObject in menuObjects)
+                        {
+                            if(menuObject.name.Contains("Collider2D"))
+                            {
+                                if(menuObject.transform.parent.GetComponent<SpriteRenderer>().material.shader.Equals(itemGlow))
+                                {
+                                    menuObject.transform.parent.GetComponent<SpriteRenderer>().material.shader = standard;
+                                }
+                            }
+                        }
+
+                        currentWeatherObject.transform.parent.GetComponent<SpriteRenderer>().material.shader = itemGlow;
+                        
+                        switch(currentWeatherObject.transform.parent.name)
+                        {
+                            case "Sunny":
+                                GameController.instance.currentWeather = GameController.WeatherState.Sunny;
+                                break;
+                            case "SunnyAndCloudy":
+                                GameController.instance.currentWeather = GameController.WeatherState.SunnyAndCloudy;
+                                break;
+                            case "Cloudy":
+                                GameController.instance.currentWeather = GameController.WeatherState.Cloudy;
+                                break;
+                            case "VeryCloudy":
+                                GameController.instance.currentWeather = GameController.WeatherState.VeryCloudy;
+                                break;
+                        }
+                        break;
                 }
             }
 
@@ -91,35 +125,51 @@ public class Picking : MonoBehaviour {
 
                         if (hit.collider.gameObject.name == menuObject.name)
                         {
-                            collided = true;
-                            if (currentHoverTag == "")
+                            bool hitSelectedWeather = false;
+                            if (hit.collider.gameObject.name.Contains("Collider2D"))
                             {
-                                currentHoverTag = menuObject.tag;
-                            }
-                            else
-                            {
-                                lastHoverTag = currentHoverTag;
-                                currentHoverTag = menuObject.tag;
-                            }
-                            if (!progressStarted)
-                            {
-                                progressStarted = true;
-                                RadialProgressBar.instance.trigger = true;
-                                RadialProgressBar.instance.speed = 24;
-                                if (currentHoverTag == "Exit(Hover)")
+                                if (hit.collider.gameObject.transform.parent.GetComponent<SpriteRenderer>().material.shader.Equals(itemGlow))
                                 {
-                                    currentEvent = "Exit";
-                                }
-                                else if (currentHoverTag == "Heli(Hover)")
-                                {
-                                    currentEvent = "Start";
-                                }
-                                else if (currentHoverTag == "Schrank(Hover)")
-                                {
-                                    currentEvent = "Settings";
+                                    hitSelectedWeather = true;
                                 }
                             }
-                            ShowHoverEffect(hit.collider.gameObject);
+                            if(!hitSelectedWeather)
+                            {
+                                collided = true;
+                                if (currentHoverTag == "")
+                                {
+                                    currentHoverTag = menuObject.tag;
+                                }
+                                else
+                                {
+                                    lastHoverTag = currentHoverTag;
+                                    currentHoverTag = menuObject.tag;
+                                }
+                                if (!progressStarted)
+                                {
+                                    progressStarted = true;
+                                    RadialProgressBar.instance.trigger = true;
+                                    RadialProgressBar.instance.speed = 24;
+                                    if (currentHoverTag == "Exit(Hover)")
+                                    {
+                                        currentEvent = "Exit";
+                                    }
+                                    else if (currentHoverTag == "Heli(Hover)")
+                                    {
+                                        currentEvent = "Start";
+                                    }
+                                    else if (currentHoverTag == "Schrank(Hover)")
+                                    {
+                                        currentEvent = "Settings";
+                                    }
+                                    else if (currentHoverTag == "Weather(Hover)")
+                                    {
+                                        currentEvent = "Weather";
+                                        currentWeatherObject = menuObject;
+                                    }
+                                }
+                                ShowHoverEffect(hit.collider.gameObject);
+                            }
                         }
                     }
                 }
@@ -194,20 +244,24 @@ public class Picking : MonoBehaviour {
 	}
 
 	void ShowHoverEffect(GameObject go){
-		GameObject []objs = GameObject.FindGameObjectsWithTag (go.tag);
-		if (objs.Length != 0) {
-			foreach (GameObject obj in objs) {
-				if(obj.GetComponent<Renderer>() != null)
-				{
-					Material []mats = obj.GetComponent<Renderer>().materials;
-					for (int i = 0; i < mats.Length; i++) {
-						if(mats[i].name.Contains("hover")) {
+        GameObject[] objs = GameObject.FindGameObjectsWithTag(go.tag);
+        if (objs.Length != 0)
+        {
+            foreach (GameObject obj in objs)
+            {
+                if (obj.GetComponent<Renderer>() != null)
+                {
+                    Material[] mats = obj.GetComponent<Renderer>().materials;
+                    for (int i = 0; i < mats.Length; i++)
+                    {
+                        if (mats[i].name.Contains("hover"))
+                        {
                             mats[i].shader = itemGlow;
-						}
-					}
-				}
-			}
-		}
+                        }
+                    }
+                }
+            }
+        }
 	}
 	
 	/*void OnCollisionEnter(){
