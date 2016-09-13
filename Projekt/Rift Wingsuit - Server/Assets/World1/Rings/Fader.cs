@@ -117,7 +117,7 @@ public class Fader : MonoBehaviour
 
                 //Reload the level after the fading is finished
                 Stop();
-                Application.LoadLevel(Application.loadedLevel);
+                //Application.LoadLevel(Application.loadedLevel);
             }
             else
             {

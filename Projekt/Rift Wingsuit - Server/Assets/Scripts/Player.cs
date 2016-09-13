@@ -25,7 +25,7 @@ public class Player : MonoBehaviour
     private HSDOutputText kinectOutput;
 
     // Player score
-	private int score = 20;
+	public int score = 20;
 
     // Weather type
     public int weatherType = 0;

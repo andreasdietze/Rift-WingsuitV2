@@ -1,10 +1,12 @@
 using UnityEngine;
 using System.Collections;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class FlyCam : MonoBehaviour
 {
 
+    public bool stopFlying = false;
 
     // smoothing
     public bool smooth = true;
@@ -39,6 +41,14 @@ public class FlyCam : MonoBehaviour
     public PlayerForwardPush pfp;
     public Transform HeliTransform; 
 
+    //Boosters and Updrafts
+    public float boosterMultiply = 2.0f;
+    public float updraftStrength = 0.0f;
+    public float updraftDiminisher = 2.0f;
+
+    public RWS_UIController uiController;
+    private bool hasStartedTimer;
+
 	// Debug font
 	GUIStyle font;
 
@@ -59,10 +69,15 @@ public class FlyCam : MonoBehaviour
 		// Tmp start transformation for reset
         startingPos = playerRidgid.position;
         startingRot = playerRidgid.rotation;
+        hasStartedTimer = false;
     }
 
     void Update()
     {
+        if (stopFlying == true)
+        {
+            return;
+        }
 		// Setup direction vector
 		Vector3 dir = new Vector3();// create (0,0,0)
 
@@ -127,6 +142,11 @@ public class FlyCam : MonoBehaviour
 			fallVelocity.y = -50.0f  / 3.6f;
 			ms = -50.0f / 3.6f;
 			startFly = true;
+            if (!hasStartedTimer)
+            {
+                hasStartedTimer = true;
+                uiController.StartTimer();
+            }
 		}
 
 		//Debug.Log ("Fall time" + (int)Time.time);
@@ -156,16 +176,43 @@ public class FlyCam : MonoBehaviour
                 actSpeed = 0.0f;
         }
 
+        /* add updraft */
+        LowerUpdraft();
+        Vector3 updraftVector = new Vector3(0.0f, updraftStrength, 0.0f);
+
+        Vector3 vel;
+
 		// Use orientation accleration
 		if(startFly)
 			addToZ = UpdateSpeedSimple ();
-		
+
         if (smooth)
+        {
             //transform.Translate(lastDir * actSpeed * speed * Time.deltaTime);
-			transform.Translate((lastDir + addToZ) * speed * actSpeed * Time.deltaTime);
+            vel = lastDir + addToZ;
+            vel.x = vel.x * boosterMultiply;
+            vel.z = vel.z * boosterMultiply;
+
+            transform.Translate(vel * speed * actSpeed * Time.deltaTime);
+            transform.Translate(updraftVector);
+        }
         else
-            transform.Translate(dir * speed * Time.deltaTime); 
-		
+        {
+            vel = dir;
+            vel.x = vel.x * boosterMultiply;
+            vel.z = vel.z * boosterMultiply;
+
+            transform.Translate(dir * speed * Time.deltaTime);
+            transform.Translate(updraftVector);
+        }
+    }
+
+    public void LowerUpdraft()
+    {
+        if (updraftStrength > 0)
+            updraftStrength = updraftStrength - updraftDiminisher;
+        if (updraftStrength < 0)
+            updraftStrength = 0;
     }
 	
 	// 1 m/s = 3,6 km/h   -> fall speed m/s * 3.6f
@@ -219,12 +266,11 @@ public class FlyCam : MonoBehaviour
     // Reload level if player collides with terrain
     void OnTriggerEnter(Collider other)
     {
-		if (other.CompareTag ("Boden")) {
-			Application.LoadLevel(0);
-            playerRidgid.rotation= startingRot;
-            playerRidgid.position= startingPos;
+        if (other.CompareTag("Boden"))
+        {
+            this.Die();
         }
-        else if(other.name.Equals("StartWP"))
+        else if (other.name.Equals("StartWP"))
         {
             //"StartWP" is the name of every ring, which means a parent object is
             //existent. Check for the Finisher tag, if existent, start fading.
@@ -235,6 +281,64 @@ public class FlyCam : MonoBehaviour
                 Fader.StartFade(Color.white);
             }
         }
+        else if (other.CompareTag("Updraft"))
+        {
+            Debug.Log("Updraft!");
+            Updraft(20);
+        }
+
+        else if (other.CompareTag("Booster"))
+        {
+            Debug.Log("Booster!");
+            StartCoroutine(Boost(3.0f, 5));
+        }
+
+        else if (other.CompareTag("FinisherNew"))
+        {
+            Finish();
+            Debug.Log("FinisherNew!");
+        }
+    }
+
+    void Die()
+    {
+        uiController.GameOver();
+        Fader.StartFade(new Color(255, 0, 0), 5);
+        stopFlying = true;
+        playerRidgid.isKinematic = true;
+        fallVelocity = new Vector3();
+        StartCoroutine(Restart(2, new Color(255, 0, 0), 1, 4));
+    }
+
+    void Finish()
+    {
+        uiController.Finish();
+        stopFlying = true;
+        playerRidgid.isKinematic = true;
+        fallVelocity = new Vector3();
+        StartCoroutine(Restart(1, new Color(0, 0, 0), 5, 2));
+
+    }
+
+    IEnumerator Boost(float strenght, int seconds)
+    {
+        boosterMultiply = strenght;
+        yield return new WaitForSeconds(seconds);
+        boosterMultiply = 1.0f;
+    }
+
+    public void Updraft(float strength)
+    {
+        updraftStrength = strength;
+    }
+
+    IEnumerator Restart(int level, Color fadeColor, int colorDelay, int fadeSeconds)
+    {
+        yield return new WaitForSeconds(colorDelay);
+        Fader.StartFade(fadeColor, fadeSeconds);
+        yield return new WaitForSeconds(fadeSeconds);
+        SceneManager.LoadScene(level);
+        GameController.instance.currentScene = level;
     }
 
     void OnGUI()

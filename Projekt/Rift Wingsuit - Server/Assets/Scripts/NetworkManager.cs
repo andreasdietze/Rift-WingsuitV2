@@ -45,10 +45,21 @@ public class NetworkManager : MonoBehaviour
         // Settings for own master server (test)
         if (useOwnMasterServer)
         {
-            MasterServer.ipAddress = GameController.instance.ip;  //"192.168.0.194";  GameController.instance.ip;
-            MasterServer.port = 23466;
-            Network.natFacilitatorIP = GameController.instance.ip; //"192.168.0.194";  GameController.instance.ip;
-            Network.natFacilitatorPort = 50005;
+            if (GameController.instance == null)
+            {
+                MasterServer.ipAddress = "192.168.0.194";  //GameController.instance.ip;
+                MasterServer.port = 23466;
+                Network.natFacilitatorIP = "192.168.0.194";  //GameController.instance.ip;
+                Network.natFacilitatorPort = 50005;
+            }
+            else
+            {
+                MasterServer.ipAddress = GameController.instance.ip;  //"192.168.0.194";  GameController.instance.ip;
+                MasterServer.port = 23466;
+                Network.natFacilitatorIP = GameController.instance.ip; //"192.168.0.194";  GameController.instance.ip;
+                Network.natFacilitatorPort = 50005;
+            }
+            
         }
 
         // Init server

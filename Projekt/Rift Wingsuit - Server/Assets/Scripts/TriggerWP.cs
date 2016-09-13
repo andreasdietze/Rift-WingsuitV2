@@ -30,6 +30,8 @@ public class TriggerWP : MonoBehaviour {
 		if (other.name == "Player(Clone)" && !hasColAppeard){
 			// Play the sound
 			audio.Play(44100);
+
+            RWS_UIController.ringScore++;
 			
 			// Flag for player score
 			player.collideWithWP = true;

@@ -26,7 +26,7 @@ public class Picking : MonoBehaviour {
         itemGlow = Shader.Find("Custom/ItemGlow");
         standard = Shader.Find("Standard");
         forwardEmpty = GameObject.Find("ForwardEmpty");
-        currentWeatherObject = GameObject.Find("Sunny");
+        currentWeatherObject = GameObject.Find(GameController.instance.currentWeather.ToString());
         currentWeatherObject.GetComponent<SpriteRenderer>().material.shader = itemGlow;
     }
 	
@@ -104,6 +104,7 @@ public class Picking : MonoBehaviour {
                                 GameController.instance.currentWeather = GameController.WeatherState.VeryCloudy;
                                 break;
                         }
+                        print("CurrentWeather: " + GameController.instance.currentWeather);
                         break;
                 }
             }

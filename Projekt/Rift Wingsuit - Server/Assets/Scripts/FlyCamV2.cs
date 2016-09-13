@@ -223,7 +223,7 @@ public class FlyCamV2 : MonoBehaviour
     {
         if (other.CompareTag("Boden"))
         {
-            Application.LoadLevel(0);
+            //Application.LoadLevel(0);
             playerRidgid.rotation = startingRot;
             playerRidgid.position = startingPos;
         }
