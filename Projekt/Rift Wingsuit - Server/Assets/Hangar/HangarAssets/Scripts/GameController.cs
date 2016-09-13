@@ -48,6 +48,11 @@ public class GameController : MonoBehaviour {
                     currentScene = 0;
                     Cursor.visible = true;
                     break;
+                case 2:
+                    SceneManager.LoadScene(1);
+                    currentScene = 1;
+                    Cursor.visible = false;
+                    break;
             }
         }
 
@@ -61,6 +66,20 @@ public class GameController : MonoBehaviour {
                     break;
                 case 2:
                     paused = !paused;
+                    break;
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            switch (currentScene)
+            {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    SceneManager.LoadScene(2);
                     break;
             }
         }
