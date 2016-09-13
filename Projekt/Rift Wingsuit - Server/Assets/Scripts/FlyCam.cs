@@ -52,6 +52,9 @@ public class FlyCam : MonoBehaviour
 	// Debug font
 	GUIStyle font;
 
+    // Audio
+    public AudioSource backgroundAudio;
+
     void Start()
     {
 		// Set preferred controller
@@ -144,6 +147,7 @@ public class FlyCam : MonoBehaviour
 			startFly = true;
             if (!hasStartedTimer)
             {
+                backgroundAudio.Play();
                 hasStartedTimer = true;
                 uiController.StartTimer();
             }

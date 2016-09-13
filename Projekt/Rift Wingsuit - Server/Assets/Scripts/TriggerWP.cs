@@ -29,7 +29,7 @@ public class TriggerWP : MonoBehaviour {
 		//Debug.Log ("Collision detected with trigger object " + other.name);
 		if (other.name == "Player(Clone)" && !hasColAppeard){
 			// Play the sound
-			audio.Play(44100);
+			audio.Play();
 
             RWS_UIController.ringScore++;
 			
