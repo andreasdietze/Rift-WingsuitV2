@@ -83,7 +83,7 @@ public class HSDOutputText : MonoBehaviour {
 
 	// Update debug info
 	void OnGUI(){
-		GUI.Label(new Rect(10, 10, 150, 150), "ShoulderY: " 
+		/*GUI.Label(new Rect(10, 10, 150, 150), "ShoulderY: " 
 		          + rightShoulder.position.y.ToString("F2"), labelFont);
 		GUI.Label(new Rect(10, 40, 150, 150), "HandY: " 
 		          + rightHand.position.y.ToString("F2"), labelFont);
@@ -92,6 +92,6 @@ public class HSDOutputText : MonoBehaviour {
 		GUI.Label(new Rect(10, 100, 150, 150), "HandZ: " 
 		          + rightHand.position.z.ToString(), labelFont);
 		GUI.Label(new Rect(10, 130, 150, 150), "OffsetZ: " 
-		          + deltaZ.ToString("F2"), labelFont);
+		          + deltaZ.ToString("F2"), labelFont); */
 	}
 }

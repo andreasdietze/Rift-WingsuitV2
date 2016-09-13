@@ -162,6 +162,6 @@ public class KinectController : Controller
 
     void OnGUI()
     {
-        GUI.Label(new Rect(10, 280, 150, 150), "Viewport: " + lastViewport.ToString(), font);
+        //GUI.Label(new Rect(10, 280, 150, 150), "Viewport: " + lastViewport.ToString(), font);
     }
 }

@@ -349,7 +349,7 @@ public class FlyCam : MonoBehaviour
     {
         //GUILayout.Box("Vector: " + lastViewport.ToString());
         //GUI.Label(new Rect(10, 130, 150, 150), "Delta: " + kinectY.ToString(), kinectOutput.labelFont);
-		Vector3 finSpeed = (lastDir + addToZ) * speed * actSpeed * Time.deltaTime;
-		GUI.Label(new Rect(10, 250, 150, 150), "Speed : " + finSpeed.z, font);
+		//Vector3 finSpeed = (lastDir + addToZ) * speed * actSpeed * Time.deltaTime;
+		//GUI.Label(new Rect(10, 250, 150, 150), "Speed : " + finSpeed.z, font);
     }
 }
